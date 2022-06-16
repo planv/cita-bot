@@ -65,6 +65,7 @@ class OperationType(str, Enum):
     SOLICITUD_ASILO = "4078"  # POLICIA - SOLICITUD ASILO
     TOMA_HUELLAS = "4010"  # POLICIA-TOMA DE HUELLAS (EXPEDICIÓN DE TARJETA) Y RENOVACIÓN DE TARJETA DE LARGA DURACIÓN
     ASIGNACION_NIE = "4031"  # Asignación de N.I.E.
+    UKRAINE = "4112"  # Asignación de N.I.E.v
 
 
 class Office(str, Enum):
@@ -100,6 +101,10 @@ class Office(str, Enum):
     OUE_SANTA_CRUZ = "1"  # 1 OUE SANTA CRUZ DE TENERIFE,  C/LA MARINA, 20
     PLAYA_AMERICAS = "2"  # CNP-Playa de las Américas, Av. de los Pueblos, 2
     PUERTO_CRUZ = "3"  # CNP-Puerto de la Cruz/Los Realejos, Av. del Campo y Llarena, 3
+
+    # Madrid
+    GETAFE = 21 # CNP Comisaría de Getafe, Churruca, 6
+    CCOSLADA = 19 # CNP Comisaría de Coslada, Guadalquivir, 16
 
 
 class Province(str, Enum):
@@ -297,6 +302,20 @@ def start_with(driver: webdriver, context: CustomerProfile, cycles: int = CYCLES
         speaker.say("FAIL")
         driver.quit()
 
+def ukraine_step2(driver: webdriver, context: CustomerProfile):
+    try:
+        WebDriverWait(driver, DELAY).until(EC.presence_of_element_located((By.ID, "txtDesCitado")))
+    except TimeoutException:
+        logging.error("Timed out waiting for form to load")
+        return None
+
+    # Enter doc number and name
+    element = driver.find_element(By.ID, "txtIdCitado")
+    element.send_keys(context.doc_value)
+
+    element = driver.find_element(By.ID, "txtDesCitado")
+    element.send_keys(context.name)
+    return True
 
 def toma_huellas_step2(driver: webdriver, context: CustomerProfile):
     try:
@@ -801,6 +820,8 @@ def cycle_cita(driver: webdriver, context: CustomerProfile, fast_forward_url, fa
     success = False
     if context.operation_code == OperationType.TOMA_HUELLAS:
         success = toma_huellas_step2(driver, context)
+    elif context.operation_code == OperationType.UKRAINE:
+        success = ukraine_step2(driver, context)
     elif context.operation_code == OperationType.RECOGIDA_DE_TARJETA:
         success = recogida_de_tarjeta_step2(driver, context)
     elif context.operation_code == OperationType.SOLICITUD_ASILO:
